@@ -8,6 +8,7 @@ import { otherIcons } from "../../constant/images";
 import SafeAreaProviderNoScroll from "../../providers/SafeAreaProviderNoScroll";
 import Navigate from "../../utils/Navigate";
 import ScreenSize from "../../utils/ScreenSize";
+import { KeyboardAvoidingView, KeyboardBackgroundView, KeyboardStickyView } from "react-native-keyboard-controller";
 const data = [1, 2, 3, 4, 5, 6];
 const Messages = () => {
   const navigate = Navigate();
@@ -16,7 +17,7 @@ const Messages = () => {
 
   return (
     <SafeAreaProviderNoScroll>
-      <View
+      <KeyboardStickyView
         style={{
           flexDirection: "column",
           height: height,
@@ -38,7 +39,7 @@ const Messages = () => {
           renderItem={({ item, index }) => <Message i={index} />}
         />
         <SendMessage />
-      </View>
+      </KeyboardStickyView>
     </SafeAreaProviderNoScroll>
   );
 };

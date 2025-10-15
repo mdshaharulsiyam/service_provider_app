@@ -35,6 +35,7 @@ const ButtonBG = ({
         style={{
           lineHeight: 23,
           color: "#FFFFFF",
+          textTransform: "capitalize",
           ...textStyle,
         }}
       >

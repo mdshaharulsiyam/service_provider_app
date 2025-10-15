@@ -77,7 +77,6 @@ export const AccountSetting = () => {
           </FlexText>
         </FlexText>
       </TouchableOpacity>,
-
     </SafeAreaProviderNoScroll>
   );
 };
