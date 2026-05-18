@@ -86,8 +86,15 @@ const Login = () => {
           text=" Log In"
           handler={() => {
             handleSignIn(fields, setFields);
-            const email = fields[0]?.value + "";
-            setRole(email?.includes("user") ? "user" : "service");
+            const email = (fields[0]?.value + "").toLowerCase();
+            const nextRole = email.includes("worker")
+              ? "worker"
+              : email.includes("admin")
+              ? "admin"
+              : email.includes("owner") || email.includes("salon")
+              ? "owner"
+              : "customer";
+            setRole(nextRole);
             navigate("TabLayout");
           }}
         />

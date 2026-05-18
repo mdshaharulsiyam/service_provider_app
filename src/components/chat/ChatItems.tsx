@@ -21,7 +21,7 @@ const ChatItems = () => {
         <ImageFlex
           image={`https://placehold.co/400x400.png`}
           text="Hello Siyam"
-          text1="Welcome to TaskAlley"
+          text1="Welcome to SalonPro"
         />
         <TextSecondary
           style={{

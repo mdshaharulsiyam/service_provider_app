@@ -1,6 +1,6 @@
 import React from "react";
 import { ImageSourcePropType, View, Share } from "react-native";
-import Clipboard from "@react-native-clipboard/clipboard";
+import * as Clipboard from "expo-clipboard";
 import Toast from "react-native-toast-message";
 import { otherIcons } from "../../constant/images";
 import FlexText from "../shered/FlexText";
@@ -36,9 +36,9 @@ const CreateReferral = () => {
           text="TASK-USER123"
         />
         <ButtonBG
-          handler={() => {
+          handler={async () => {
             const code = "TASK-USER123";
-            Clipboard.setString(code);
+            await Clipboard.setStringAsync(code);
             Toast.show({ type: "success", text1: "Copied", text2: `${code} copied` });
           }}
           text="Copy Code"
@@ -59,8 +59,8 @@ const CreateReferral = () => {
             const url = `https://taskalley.app/ref/${code}`;
             try {
               await Share.share({
-                message: `Join me on TaskAlley! Use my code ${code} to sign up: ${url}`,
-                title: "Share your TaskAlley referral",
+                message: `Join me on SalonPro! Use my code ${code} to sign up: ${url}`,
+                title: "Share your SalonPro referral",
                 url,
               });
             } catch (e) {}

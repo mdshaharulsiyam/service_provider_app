@@ -94,7 +94,7 @@ const RecentlyAddedTask = () => {
           })
         }
         color="#115E59"
-        text="Recently added task"
+        text="Recently added salon services"
       />
       <FlatList
         data={data}

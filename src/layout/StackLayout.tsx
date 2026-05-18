@@ -82,6 +82,7 @@ const StackLayout = () => {
 
   return (
     <Stack.Navigator
+      id={undefined}
       initialRouteName="TabLayout"
       screenOptions={{ headerShown: false }}
     >

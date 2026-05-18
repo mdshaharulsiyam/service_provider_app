@@ -1,14 +1,15 @@
 import React, { createContext, ReactNode, useContext, useState } from "react";
+import { SalonRole } from "../theme/salonTheme";
 
 interface GlobalContextType {
-  role: "user" | "service" | null;
-  setRole: React.Dispatch<React.SetStateAction<"user" | "service" | null>>;
+  role: SalonRole | null;
+  setRole: React.Dispatch<React.SetStateAction<SalonRole | null>>;
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 
 const GlobalContextProvider = ({ children }: { children: ReactNode }) => {
-  const [role, setRole] = useState<"user" | "service" | null>(null);
+  const [role, setRole] = useState<SalonRole | null>(null);
   const value: GlobalContextType = {
     role,
     setRole,

@@ -2,17 +2,24 @@ import React, { ReactNode } from "react";
 import {
   Image,
   ImageSourcePropType,
+  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   ViewStyle,
-  Modal,
 } from "react-native";
-import { launchCamera, launchImageLibrary } from "react-native-image-picker";
-import { pick } from "@react-native-documents/picker";
+import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { otherIcons, svgIcons } from "../../../constant/images";
 import SvgIcon from "../SvgIcon";
+
+const toImageFile = (asset: ImagePicker.ImagePickerAsset) => ({
+  uri: asset.uri,
+  name: asset.fileName ?? asset.uri.split("/").pop() ?? "image.jpg",
+  type: asset.mimeType ?? "image/jpeg",
+});
+
 const ImageUploader = ({
   style,
   component,
@@ -26,18 +33,12 @@ const ImageUploader = ({
 
   const handlePick = async () => {
     try {
-      const res: any = await launchImageLibrary({
-        mediaType: "photo",
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
         selectionLimit: 1,
       });
-      const asset = res?.assets?.[0];
-      const file = asset
-        ? {
-          uri: asset.uri,
-          name: asset.fileName,
-          type: asset.type,
-        }
-        : null;
+      const asset = res.canceled ? null : res.assets[0];
+      const file = asset ? toImageFile(asset) : null;
       if (file?.uri && setFiels) {
         setFiels((prev: any) => [file, ...prev]);
       }
@@ -50,13 +51,15 @@ const ImageUploader = ({
 
   const handlePickFile = async () => {
     try {
-      const res: any = await pick({});
-      const first = res?.[0];
+      const res = await DocumentPicker.getDocumentAsync({
+        copyToCacheDirectory: true,
+      });
+      const first = res.canceled ? null : res.assets[0];
       const file = first
         ? {
             uri: first.uri,
             name: first.name,
-            type: first.type,
+            type: first.mimeType,
           }
         : null;
       if (file?.uri && setFiels) {
@@ -71,18 +74,16 @@ const ImageUploader = ({
 
   const handleCapture = async () => {
     try {
-      const res: any = await launchCamera({
-        mediaType: "photo",
-        saveToPhotos: true,
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        return;
+      }
+
+      const res = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
       });
-      const asset = res?.assets?.[0];
-      const file = asset
-        ? {
-          uri: asset.uri,
-          name: asset.fileName,
-          type: asset.type,
-        }
-        : null;
+      const asset = res.canceled ? null : res.assets[0];
+      const file = asset ? toImageFile(asset) : null;
       if (file?.uri && setFiels) {
         setFiels((prev: any) => [file, ...prev]);
       }

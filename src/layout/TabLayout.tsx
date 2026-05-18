@@ -9,38 +9,51 @@ import PostService from "../screens/tabs/PostService";
 import PostTask from "../screens/tabs/PostTask";
 import Profile from "../screens/tabs/Profile";
 import Tasks from "../screens/tabs/Tasks";
+
 const Tab = createBottomTabNavigator();
+
 const TabLayout = () => {
   const { role } = useGlobalContext();
-  const tabs = [
-    {
-      route: "Home",
-      label: role == "user" ? "Home" : "Dashboard",
-      component: Home,
-    },
-    {
-      route: "Task",
-      label: "My Tasks",
-      component: Tasks,
-    },
-    {
-      route: "PostTask",
-      label: role == "user" ? "Post Task" : "My Service",
-      component: role == "user" ? PostTask : PostService,
-    },
-    {
-      route: "Chat",
-      label: "Chat",
-      component: Chat,
-    },
-    {
-      route: "Profile",
-      label: "Profile",
-      component: Profile,
-    },
-  ];
+  const isOwner = role === "owner" || role === "admin";
+  const isWorker = role === "worker";
+  const tabs = isWorker
+    ? [
+        { route: "Home", label: "Schedule", component: Home },
+        { route: "Task", label: "Bookings", component: Tasks },
+        { route: "PostTask", label: "Services", component: PostService },
+        { route: "Chat", label: "Chat", component: Chat },
+        { route: "Profile", label: "Profile", component: Profile },
+      ]
+    : [
+        {
+          route: "Home",
+          label: isOwner ? "Dashboard" : "Home",
+          component: Home,
+        },
+        {
+          route: "Task",
+          label: "Bookings",
+          component: Tasks,
+        },
+        {
+          route: "PostTask",
+          label: isOwner ? "Services" : "Book",
+          component: isOwner ? PostService : PostTask,
+        },
+        {
+          route: "Chat",
+          label: "Chat",
+          component: Chat,
+        },
+        {
+          route: "Profile",
+          label: "Profile",
+          component: Profile,
+        },
+      ];
   return (
     <Tab.Navigator
+      id={undefined}
       initialRouteName="Home"
       screenOptions={{ headerShown: false }}
       tabBar={(props) => <Tabbar {...props} />}

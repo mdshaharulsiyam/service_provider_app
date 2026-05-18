@@ -10,6 +10,7 @@ import { StyleSheet, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BackButton from "../components/shered/BackButton";
+import { salonTheme } from "../theme/salonTheme";
 import { useGlobalContext } from "./GlobalContextProvider";
 const withoutLog = [
   "login",
@@ -57,6 +58,7 @@ const SafeAreaProvider = ({
       style={{
         marginTop: zeroPadding ? 0 : top,
         marginBottom: zeroPadding ? 0 : bottom,
+        backgroundColor: salonTheme.colors.background,
       }}
     >
       <View

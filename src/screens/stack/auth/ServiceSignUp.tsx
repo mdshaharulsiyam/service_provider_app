@@ -79,7 +79,7 @@ const ServiceSignUp = () => {
     }
   }
   return (
-    <SafeAreaProvider backButtonText="Sign Up as Service Provider" handler={backHandler}>
+    <SafeAreaProvider backButtonText="Sign Up as Salon Owner" handler={backHandler}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View
           style={{

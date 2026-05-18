@@ -18,9 +18,10 @@ const ChooseSignUp = () => {
   const { height } = Dimensions.get("window");
   const { top, bottom } = useSafeAreaInsets();
   const navigate = Navigate();
+
   return (
     <SafeAreaProvider backButtonText="Sign Up as">
-      <ScrollView showsVerticalScrollIndicator={false} style={{}}>
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View
           style={{
             flex: 1,
@@ -31,7 +32,7 @@ const ChooseSignUp = () => {
           }}
         >
           <HeaderDesign text="Choose Your Role to Get Started" />
-          <TextSecondary text="Select the profile that best suits your journey. Whether you're here to book reliable services or offer them, we’ve built the right tools just for you." />
+          <TextSecondary text="Create a customer account to book salon services, or register as a salon owner to manage your team, services, and appointments." />
           <ImageButton
             imageSource={otherIcons.Customer as ImageSourcePropType}
             title="Customer"
@@ -39,13 +40,9 @@ const ChooseSignUp = () => {
           />
           <ImageButton
             imageSource={otherIcons.Service as ImageSourcePropType}
-            title="Service Provider"
+            title="Salon Owner"
             onPress={() => navigate("ServiceSignUp")}
           />
-          {/* <ButtonBG
-            text='Continue'
-            handler={() => { }}
-          /> */}
         </View>
       </ScrollView>
     </SafeAreaProvider>

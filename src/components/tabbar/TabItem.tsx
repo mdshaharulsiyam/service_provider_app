@@ -1,12 +1,11 @@
 import React from "react";
 import {
-  Image,
-  ImageSourcePropType,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { svgIcons, TabIcons } from "../../constant/images";
+import { svgIcons } from "../../constant/images";
+import { salonTheme } from "../../theme/salonTheme";
 import SvgIcon from "../ui/SvgIcon";
 
 const TabItem = ({
@@ -20,35 +19,17 @@ const TabItem = ({
 }) => {
   return (
     <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        height: 50,
-        borderTopWidth: isFocused ? 2 : 0,
-        borderColor: isFocused ? "#115E59" : "transparent",
-        backgroundColor: isFocused ? "#E6F4F1" : "transparent",
-      }}
+      style={[styles.container, isFocused && styles.containerFocused]}
     >
-      {/* <Image
-        source={TabIcons[label as keyof typeof TabIcons] as ImageSourcePropType}
-        style={{
-          width: 24,
-          height: 24,
-          marginBottom: 4,
-          tintColor: isFocused ? "#115E59" : "black",
-        }}
-      /> */}
       <SvgIcon
         component={svgIcons[label as keyof typeof svgIcons] as any}
-        width={24}
-        height={24}
-        color={isFocused ? "#115E59" : "black"}
+        width={22}
+        height={22}
+        color={isFocused ? salonTheme.colors.primary : salonTheme.colors.textMuted}
       />
       <Text
-        style={{
-          color: isFocused ? "#115E59" : "black",
-        }}
+        numberOfLines={1}
+        style={[styles.label, isFocused && styles.labelFocused]}
       >
         {label}
       </Text>
@@ -58,4 +39,25 @@ const TabItem = ({
 
 export default TabItem;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 56,
+    gap: 4,
+    marginHorizontal: 4,
+    borderRadius: salonTheme.radius.md,
+  },
+  containerFocused: {
+    backgroundColor: salonTheme.colors.primarySoft,
+  },
+  label: {
+    maxWidth: 76,
+    color: salonTheme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  labelFocused: {
+    color: salonTheme.colors.primaryDark,
+  },
+});

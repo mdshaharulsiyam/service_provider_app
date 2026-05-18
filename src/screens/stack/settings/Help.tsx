@@ -42,7 +42,7 @@ const faqs = [
   {
     id: "5",
     question: "How do I check past tasks or receipts?",
-    answer: "Go to 'My Tasks' to view history and download receipts.",
+    answer: "Go to 'Bookings' to view history and download receipts.",
   },
 ];
 

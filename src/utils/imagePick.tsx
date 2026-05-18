@@ -1,16 +1,22 @@
-import { pick } from "@react-native-documents/picker";
+import * as DocumentPicker from "expo-document-picker";
 
 export const SelectImage = async () => {
   try {
-    const pickResult = (await pick()) as any;
+    const pickResult = await DocumentPicker.getDocumentAsync({
+      copyToCacheDirectory: true,
+    });
+    const asset = pickResult.canceled ? null : pickResult.assets[0];
+    if (!asset) {
+      return null;
+    }
+
     const file = {
-      uri: pickResult.uri,
-      name: pickResult.name,
-      type: pickResult.type,
+      uri: asset.uri,
+      name: asset.name,
+      type: asset.mimeType,
     };
-    // const [pickResult] = await pick({mode:'import'}) // equivalent
-    // do something with the picked file
+    return file;
   } catch (err: unknown) {
-    // see error handling
+    return null;
   }
 };

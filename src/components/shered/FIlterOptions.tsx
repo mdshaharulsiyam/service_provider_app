@@ -24,7 +24,11 @@ const FIlterOptions = (props: any) => {
         paddingHorizontal: 10
       }}
     >
-      {fields?.map((field: FieldsType) => RenderField(field, setFields))}
+      {fields?.map((field: FieldsType, index) => (
+        <React.Fragment key={field.name || index}>
+          {RenderField(field, setFields)}
+        </React.Fragment>
+      ))}
       <FlexText style={{
         justifyContent: "space-between",
         marginTop: 20

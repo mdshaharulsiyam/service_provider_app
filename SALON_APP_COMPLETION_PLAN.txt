@@ -1,0 +1,901 @@
+SALON APP COMPLETION PLAN
+Generated from: salon_app_feature_list.html
+Repo context:
+- Backend: booking_app_backend, Express + TypeScript + MongoDB/Mongoose.
+- Mobile app: service_provider_app, React Native.
+- Existing backend modules include auth, verification, business, service, service listing,
+  booking, notifications, review, message/conversation, payment, coupon, settings,
+  overview, category, banner, and location data.
+- Existing app screens still use some TaskAlley/task/provider naming, so salon-specific
+  naming and workflows must be cleaned up during implementation.
+
+GOAL
+Build a complete salon booking platform with these v1 roles:
+- Admin
+- Salon owner
+- Worker
+- Customer
+
+Recommended role mapping from current code:
+- ADMIN / SUPER_ADMIN -> Admin
+- VENDOR -> Salon owner
+- PROFESSIONAL or a new WORKER role -> Worker
+- USER -> Customer
+
+V1 FEATURE MODULES
+1. Auth and user management
+2. Salon and worker management
+3. Service management
+4. Booking and slot system
+5. Notifications and reminders
+6. Ratings and reviews
+7. Points and loyalty
+8. Communication and disputes
+9. Admin panel
+10. Location backend support
+
+FUTURE SCOPE, NOT V1
+- Interactive map view
+- Points redemption for discounts/free services
+- Separate worker-only app
+
+PRIORITY KEY
+- P0: Must finish for usable v1.
+- P1: Important polish or business rule.
+- P2: Nice-to-have after stable v1.
+
+============================================================
+PHASE 0 - PROJECT FOUNDATION
+============================================================
+
+0.1 Confirm product naming. [P0]
+- Rename visible app text from TaskAlley/task/provider to Salon/salon/service/booking.
+- Update app.json name, Android/iOS visible names if required.
+- Update README notes for backend and app startup.
+- Verify no customer-facing screen still says task/provider unless intentionally used.
+
+0.2 Create final role strategy. [P0]
+- Decide whether to add WORKER role or reuse PROFESSIONAL.
+- Update backend role enum and route permissions.
+- Document which routes each role can access.
+- Add seed admin account rules.
+
+0.3 Audit current backend modules. [P0]
+- List existing endpoints by module.
+- Mark each endpoint as keep, rename, extend, or remove later.
+- Do not remove working code before replacement is ready.
+- Create a simple API checklist for mobile integration.
+
+0.4 Audit current mobile screens. [P0]
+- List screens that can be reused for salon workflows.
+- Mark screens that need rename only.
+- Mark screens that need full redesign.
+- Mark missing screens.
+
+0.5 Standardize API response shape. [P0]
+- Keep one success/error response format.
+- Ensure all controllers use sendResponse or the same helper.
+- Return validation errors in a mobile-friendly shape.
+- Add consistent pagination metadata.
+
+0.6 Standardize validation. [P0]
+- Use Zod validators for create/update routes.
+- Add validation for ObjectId params.
+- Add validation for date/time inputs.
+- Add validation for phone and email.
+
+0.7 Add environment checklist. [P0]
+- Verify DATABASE_URL, DB_NAME, JWT secrets, mail config, storage config.
+- Add example.env fields for new reminders, OTP, notification, and app URL settings.
+- Never commit real secrets from .env.
+
+0.8 Add basic test strategy. [P0]
+- Add backend smoke tests for auth, salon, service, and booking.
+- Add mobile smoke test for app render.
+- Add manual QA checklist for booking flows.
+
+============================================================
+PHASE 1 - AUTH AND USER MANAGEMENT
+============================================================
+
+1.1 Update user model for salon roles. [P0]
+- Add final role enum: ADMIN, SALON_OWNER, WORKER, CUSTOMER if choosing explicit names.
+- Or map existing roles clearly if keeping old enum names.
+- Add phone unique index globally.
+- Add suspension fields: is_suspended, suspended_reason, suspended_at.
+- Add deleted/anonymized fields: deleted_at, anonymized_at.
+
+1.2 Customer registration. [P0]
+- Add customer signup via email/password.
+- Add phone field.
+- Add OTP verification for email or phone.
+- Prevent duplicate email.
+- Prevent duplicate phone across all roles.
+- Return access and refresh tokens after verification or login.
+
+1.3 Salon owner registration. [P0]
+- Add owner signup with business details.
+- Required fields: owner name, email/phone, password, salon name, category, address.
+- Store salon as business with business_category salon.
+- Set new salon approval status pending by default.
+- Notify admin for approval.
+
+1.4 Worker account creation. [P0]
+- Allow only salon owner/admin to create worker accounts.
+- Worker cannot self-register.
+- Worker must belong to one salon or specific salon branches.
+- Worker profile fields: name, phone/email, avatar, bio, active status.
+- Worker login works with same auth system.
+
+1.5 JWT access and refresh token flow. [P0]
+- Add refresh token endpoint.
+- Store refresh sessions per device.
+- Add device id/name/ip fields to session.
+- Add logout current device.
+- Add logout all devices.
+
+1.6 Profile management. [P0]
+- Add get my profile.
+- Add update name, avatar, contact, gender/preferences.
+- Add change password.
+- Add delete account request.
+
+1.7 Suspension and deleted account behavior. [P1]
+- Admin can suspend with reason.
+- Suspended users cannot login or book.
+- Suspended owner salon is hidden or blocked.
+- Deleted accounts anonymize bookings and reviews instead of hard deleting history.
+- Add appeal/contact status if required.
+
+1.8 Mobile auth screens. [P0]
+- Update login screen for customer/owner/worker.
+- Update signup chooser labels.
+- Update customer signup fields.
+- Update salon owner signup fields.
+- Add OTP verification screen integration.
+- Store tokens securely.
+- Route user to role-specific home after login.
+
+1.9 Auth verification. [P0]
+- Test duplicate phone across roles.
+- Test worker cannot self-register.
+- Test suspended user cannot login.
+- Test logout all devices invalidates sessions.
+
+============================================================
+PHASE 2 - SALON AND WORKER MANAGEMENT
+============================================================
+
+2.1 Salon profile schema update. [P0]
+- Keep existing business model but align fields to salon needs.
+- Add description.
+- Add category.
+- Add photos gallery.
+- Add logo and banner.
+- Add lat/lng.
+- Add salon status: active, temporarily_closed, permanently_closed.
+- Add global concurrent booking cap.
+
+2.2 Salon address and location. [P0]
+- Keep existing Bangladesh division/district/upazila fields if required.
+- Add plain street address.
+- Store GeoJSON coordinates as [longitude, latitude].
+- Add 2dsphere index.
+- Add backend radius search.
+
+2.3 Operating hours. [P0]
+- Replace simple availability arrays with structured day settings.
+- For each day store open/closed, open_time, close_time.
+- Allow different hours per day.
+- Validate close time is after open time.
+- Keep all times stored consistently.
+
+2.4 Multiple salons per owner. [P1]
+- Confirm one owner can create multiple business/salon records.
+- Add owner salon list endpoint.
+- Add current selected salon in mobile owner dashboard.
+- Ensure services/workers/bookings always attach to one salon.
+
+2.5 Worker model/schedule. [P0]
+- Create WorkerProfile or extend auth with worker profile.
+- Store salon id, assigned services, working days, working hours.
+- Add worker day off/leave records.
+- Add active/inactive toggle.
+- Validate worker schedule stays within salon hours unless admin override is allowed.
+
+2.6 Worker management endpoints. [P0]
+- Add worker create/update/list/detail/delete or deactivate.
+- Add assign/unassign services.
+- Add set worker schedule.
+- Add mark leave/day off.
+- Block deleting worker with active bookings; use deactivate instead.
+
+2.7 Mobile owner salon setup. [P0]
+- Build/edit salon profile screen.
+- Build operating hours editor.
+- Build salon status control.
+- Build photos/logo upload.
+- Build owner salon switcher if multiple salons are supported.
+
+2.8 Mobile worker management. [P0]
+- Build worker list.
+- Build add/edit worker form.
+- Build schedule editor.
+- Build service assignment UI.
+- Build worker leave/day-off UI.
+
+2.9 Salon/worker verification. [P0]
+- Test worker cannot be booked outside their hours.
+- Test closed salon does not show bookable slots.
+- Test temporarily closed salon blocks new bookings.
+- Test global concurrent cap is enforced.
+
+============================================================
+PHASE 3 - SERVICE MANAGEMENT
+============================================================
+
+3.1 Clarify service data model. [P0]
+- Keep category/service as master data if useful.
+- Use service_listing as actual salon service.
+- Rename mobile labels from listing/task to salon service.
+- Add missing fields to salon service.
+
+3.2 Salon service schema. [P0]
+- Fields: salon, name, description, category, image/photos, price, duration_minutes.
+- Add active/inactive toggle.
+- Add per-service concurrent booking limit.
+- Add assigned_workers array.
+- Add optional promo_price, promo_start, promo_end.
+- Store duration in minutes, not decimal hours.
+
+3.3 Service create/update endpoints. [P0]
+- Owner can create service for own salon.
+- Owner can edit own salon services.
+- Owner can activate/deactivate service.
+- Owner can assign service to workers.
+- Admin can view/moderate all services.
+
+3.4 Service validation. [P0]
+- Price cannot be negative.
+- Duration must be positive.
+- Concurrent limit must be at least 1.
+- Promo end must be after promo start.
+- Inactive services cannot be booked.
+
+3.5 Mobile service screens. [P0]
+- Update AddUpdateService fields.
+- Add service list for owner.
+- Add active/inactive control.
+- Add worker assignment selector.
+- Add promo price fields.
+- Show final price before booking confirmation.
+
+3.6 Service verification. [P0]
+- Test inactive service hidden from customer booking flow.
+- Test duration blocks correct time window.
+- Test per-service capacity blocks overbooking.
+- Test promo price only applies inside date range.
+
+============================================================
+PHASE 4 - BOOKING AND SLOT SYSTEM
+============================================================
+
+4.1 Define booking lifecycle. [P0]
+- Replace or map current statuses to:
+  pending, confirmed, in_progress, completed, no_show, cancelled.
+- Keep status history with status, time, changed_by, reason.
+- Add booking reference number.
+- Add cancellation reason fields.
+
+4.2 Update booking schema. [P0]
+- Fields: salon, customer, service, optional worker, date, start_at, end_at.
+- Store start_at and end_at in UTC.
+- Store customer timezone or timezone offset if needed.
+- Add status history.
+- Add payment status only if payment is in scope for v1.
+- Add unique/locking rules for double-booking prevention.
+
+4.3 Slot settings. [P0]
+- Add salon slot duration setting, e.g. 30 or 60 minutes.
+- Add reminder window setting.
+- Add cancellation window setting.
+- Add timezone setting if salons operate outside one timezone.
+
+4.4 Slot generation endpoint. [P0]
+- Customer selects salon, service, date, optional worker.
+- Backend generates slots from salon hours.
+- Exclude closed days.
+- Exclude worker off days.
+- Exclude worker leave.
+- Exclude past slots.
+- Use service duration to calculate end time.
+- Return remaining capacity for each slot.
+
+4.5 Capacity rules. [P0]
+- Enforce per-service concurrent booking limit.
+- Enforce salon global concurrent booking cap.
+- If worker selected, enforce worker availability.
+- If no worker selected, assign later or leave unassigned depending on business rule.
+- Prevent overbooking with database transaction or atomic check.
+
+4.6 Customer booking rules. [P0]
+- Customer can create booking only for active salon and active service.
+- Customer can have only one active booking per salon at a time.
+- Block same customer + same service + same slot duplicate booking.
+- Send confirmation reference after successful booking.
+
+4.7 Cancellation rules. [P0]
+- Customer can cancel freely more than 2 hours before start.
+- Cancellation within 2 hours creates admin approval request.
+- Owner/worker cannot directly cancel or decline customer booking.
+- Admin can force-cancel with logged reason.
+- Cancelled slot is released immediately.
+- Repeated same-day cancellations flag user for admin review.
+
+4.8 Completion and no-show rules. [P0]
+- Owner or assigned worker can mark in_progress.
+- Owner or assigned worker can mark completed.
+- Owner or assigned worker can mark no_show after slot end plus configured grace period.
+- Completed booking unlocks review and points.
+- No-show booking does not award points.
+
+4.9 Mobile customer booking flow. [P0]
+- Salon discovery/list.
+- Salon profile details.
+- Service selection.
+- Date picker.
+- Slot picker showing remaining capacity.
+- Optional worker picker.
+- Booking confirmation screen.
+- Booking success screen/reference.
+
+4.10 Mobile owner/worker booking management. [P0]
+- Booking list by day/status.
+- Booking detail.
+- Assign worker if not selected.
+- Mark in_progress.
+- Mark completed.
+- Mark no_show.
+- Contact customer via call/chat.
+
+4.11 Booking history. [P0]
+- Customer can see upcoming and past bookings.
+- Salon owner can see salon booking history.
+- Worker can see assigned bookings.
+- Admin can see all bookings.
+
+4.12 Booking verification. [P0]
+- Test timezone storage uses UTC.
+- Test closed day has no slots.
+- Test worker day off has no slots.
+- Test 90-minute service blocks correct range.
+- Test concurrent booking cap blocks exactly at limit.
+- Test cancellation within 2 hours requires admin approval.
+- Test cancelled slot becomes available again.
+
+============================================================
+PHASE 5 - NOTIFICATIONS AND REMINDERS
+============================================================
+
+5.1 Notification model update. [P0]
+- Add notification type.
+- Add target role/user.
+- Add related entity: booking, review, dispute, points.
+- Add delivery channels: in_app, push, email, sms.
+- Add read_at.
+- Add sent_at and failed_at.
+
+5.2 Notification preferences. [P1]
+- Add per-user preferences for push, email, SMS.
+- Add default preferences.
+- Add update endpoint.
+- Add mobile preferences screen integration.
+
+5.3 Event notifications. [P0]
+- New booking: notify salon owner and assigned worker.
+- Booking cancelled: notify owner, worker, customer.
+- Booking completed: notify customer to leave review.
+- Admin force-cancel/suspension: notify affected user.
+- New review: notify salon owner.
+- Points earned: notify customer.
+
+5.4 Reminder scheduler. [P0]
+- Add reminder job runner.
+- Use configured reminder minutes before slot.
+- Send customer reminder.
+- Send worker reminder if assigned.
+- If booking is made inside the reminder window, send reminder immediately.
+- Prevent duplicate reminder sends.
+
+5.5 Push/email/SMS integration. [P1]
+- Choose push provider for React Native.
+- Store mobile push token.
+- Keep email as fallback if push is not ready.
+- Add SMS only if provider credentials are available.
+
+5.6 Mobile notifications. [P0]
+- Build notifications list.
+- Add unread indicator.
+- Add mark read.
+- Navigate notification to related booking/review/dispute.
+- Add notification preferences screen.
+
+5.7 Notification verification. [P0]
+- Test notification created for every booking event.
+- Test reminder sends once.
+- Test immediate reminder for last-minute booking.
+- Test disabled channel does not send.
+
+============================================================
+PHASE 6 - RATINGS AND REVIEWS
+============================================================
+
+6.1 Review model update. [P0]
+- Link review to completed booking.
+- Enforce one salon review per completed booking.
+- Add review target: salon, service, customer.
+- Add editable_until.
+- Add hidden/removed moderation fields.
+- Add report count/status.
+
+6.2 Customer to salon review. [P0]
+- Unlock only after booking completed.
+- Add star rating 1 to 5.
+- Add optional text.
+- Add optional images only if desired.
+- Allow edit within 24 hours.
+- Lock after 24 hours.
+- Show public reviews on salon profile.
+- Compute salon average rating.
+
+6.3 Salon owner to customer rating. [P1]
+- Allow owner to rate customer after completion.
+- Store customer reputation score.
+- Show low-rated customer warning to future salon owners only.
+- Do not show customer rating publicly.
+
+6.4 Moderation. [P1]
+- Add report review endpoint.
+- Add admin review report queue.
+- Admin can hide review.
+- Admin can remove review.
+- Add basic spam/abuse keyword filter.
+
+6.5 Mobile review screens. [P0]
+- Show leave-review prompt after completed booking.
+- Build review form.
+- Build edit review form within allowed time.
+- Show reviews on salon profile.
+- Build owner customer-rating prompt.
+
+6.6 Review verification. [P0]
+- Test no review before completion.
+- Test one review per booking.
+- Test edit allowed before 24 hours.
+- Test edit blocked after 24 hours.
+- Test hidden review does not appear publicly.
+
+============================================================
+PHASE 7 - POINTS AND LOYALTY
+============================================================
+
+7.1 Points settings. [P1]
+- Add admin setting: points per completed booking.
+- Add admin setting: bonus points for review.
+- Add admin setting: expiry policy.
+
+7.2 Points ledger model. [P1]
+- Create ledger entries for earned, spent, expired, adjusted.
+- Store user, booking, amount, reason, expires_at.
+- User point balance should be derived or safely synchronized.
+- Do not award duplicate points for same booking.
+
+7.3 Earn points. [P1]
+- Award points when booking marked completed.
+- Award bonus when review submitted if configured.
+- Do not award points for cancelled booking.
+- Do not award points for no-show.
+- Do not award points for admin force-cancel due to customer fault.
+
+7.4 Points expiry. [P2]
+- Add scheduled expiry job.
+- Expire by configured inactivity or ledger expiry date.
+- Notify customer when points expire or are close to expiry if needed.
+
+7.5 Mobile points screens. [P1]
+- Show current point balance.
+- Show ledger history.
+- Show points earned notification.
+- Hide redemption UI until future scope.
+
+7.6 Points verification. [P1]
+- Test completed booking earns once.
+- Test cancelled/no-show earns zero.
+- Test review bonus earns once.
+- Test ledger total matches balance.
+
+============================================================
+PHASE 8 - COMMUNICATION AND DISPUTES
+============================================================
+
+8.1 Booking chat rules. [P0]
+- Use existing conversation/message modules if possible.
+- Create chat channel per booking.
+- Customer can chat with salon owner or assigned worker.
+- Chat opens after booking confirmation.
+- Chat closes 24 hours after completion.
+- Keep messages visible after chat closes.
+
+8.2 Chat safety. [P1]
+- Add report message option if needed.
+- Add basic keyword flag for cancellation pressure.
+- Log suspicious messages for admin review.
+
+8.3 Call option. [P0]
+- Add call button on booking detail.
+- Decide whether phone number is revealed or device dialer opens.
+- Hide phone when user has no permission to contact.
+
+8.4 Dispute model. [P0]
+- Create dispute with booking, opened_by, reason, evidence, status.
+- Statuses: open, under_review, resolved, rejected.
+- Dispute must open within 48 hours of booking end.
+- Store admin resolution and actions.
+
+8.5 Dispute endpoints. [P0]
+- Customer or salon can open dispute.
+- Admin can list/filter disputes.
+- Admin can view booking, messages, evidence.
+- Admin can force-cancel, warn, suspend, add refund note.
+- Resolution visible to both parties.
+
+8.6 Mobile chat and dispute screens. [P0]
+- Ensure Messages screen works per booking.
+- Add chat entry from booking details.
+- Add dispute creation screen.
+- Add dispute status screen.
+- Add admin dispute screen if admin is mobile-only.
+
+8.7 Communication verification. [P0]
+- Test chat unavailable before confirmation.
+- Test chat closes 24 hours after completion.
+- Test dispute blocked after 48 hours.
+- Test admin resolution is visible to both parties.
+
+============================================================
+PHASE 9 - ADMIN PANEL
+============================================================
+
+9.1 Choose admin surface. [P0]
+- Decide if admin panel is mobile app, web app, or backend-only API first.
+- If no admin frontend exists, build admin APIs first.
+- Create a minimal web/admin UI later if needed.
+
+9.2 Salon approval. [P0]
+- List pending salon registrations.
+- View salon documents/details.
+- Approve salon.
+- Reject salon with reason.
+- Notify owner.
+
+9.3 User management. [P0]
+- List users by role/status.
+- View user profile and activity.
+- Suspend user with reason.
+- Warn user.
+- Delete/anonymize account.
+- View flagged cancellation/no-show users.
+
+9.4 Booking management. [P0]
+- View all bookings.
+- Filter by salon, customer, worker, status, date.
+- Export bookings CSV.
+- Force-cancel booking with reason.
+- Approve or reject late cancellation requests.
+
+9.5 Global settings. [P0]
+- Configure points value.
+- Configure cancellation window.
+- Configure reminder options.
+- Configure no-show grace period.
+- Configure platform contact details.
+
+9.6 Review moderation. [P1]
+- View reported reviews.
+- Hide/remove reviews.
+- View spam keyword flags.
+
+9.7 Dispute management. [P0]
+- View pending disputes.
+- View related booking and messages.
+- Resolve dispute.
+- Log action history.
+
+9.8 Analytics. [P1]
+- Total bookings daily/weekly/monthly.
+- Top salons by booking volume.
+- Top salons by rating.
+- Cancellation rate by salon/customer.
+- No-show rate.
+- Point economy issued/spent/expired.
+
+9.9 Admin verification. [P0]
+- Test salon approval changes customer visibility.
+- Test admin force-cancel logs reason.
+- Test export respects filters.
+- Test suspended user cannot perform restricted actions.
+
+============================================================
+PHASE 10 - LOCATION BACKEND SUPPORT
+============================================================
+
+10.1 Salon location storage. [P0]
+- Ensure every salon stores lat/lng.
+- Validate longitude and latitude ranges.
+- Add location index.
+
+10.2 Search by radius. [P0]
+- Add backend search endpoint with lat, lng, radius.
+- Filter only active/approved salons.
+- Sort by distance or relevance.
+- Return distance as text or numeric kilometers.
+
+10.3 Mobile location display. [P0]
+- Show distance text on salon cards.
+- Show location/address on salon profile.
+- Do not build map UI for v1.
+
+10.4 Location verification. [P0]
+- Test salons outside radius are excluded.
+- Test missing location handled gracefully.
+- Test blocked/unapproved salons are excluded.
+
+============================================================
+PHASE 11 - MOBILE APP COMPLETION
+============================================================
+
+11.1 Navigation by role. [P0]
+- Customer tabs: Home, Bookings, Chat, Notifications, Profile.
+- Owner tabs: Dashboard, Bookings, Services, Workers, Chat/Profile.
+- Worker tabs: Assigned bookings, Chat, Notifications, Profile.
+- Admin route only if admin is supported in mobile app.
+
+11.2 Customer home. [P0]
+- Show salon categories.
+- Show nearby salons.
+- Show search/filter.
+- Show top-rated salons.
+- Show upcoming booking if any.
+
+11.3 Salon profile page. [P0]
+- Show salon photos/logo.
+- Show address/distance.
+- Show operating hours.
+- Show services.
+- Show workers.
+- Show reviews and average rating.
+- Add book button.
+
+11.4 Booking screens. [P0]
+- Booking flow screens from Phase 4.
+- Booking detail screen.
+- Upcoming/history tabs.
+- Cancel booking flow.
+- Late cancellation request flow.
+
+11.5 Owner dashboard. [P0]
+- Today bookings.
+- New booking alerts.
+- Service management shortcut.
+- Worker management shortcut.
+- Basic stats.
+
+11.6 Worker screens. [P0]
+- Assigned bookings by day.
+- Booking detail.
+- Mark progress/completed/no-show.
+- Chat with customer.
+
+11.7 Profile/settings. [P0]
+- My profile.
+- Change password.
+- Notification preferences.
+- Terms/privacy/help.
+- Delete account.
+- Logout.
+
+11.8 Polish app state handling. [P0]
+- Loading states.
+- Empty states.
+- Error states.
+- Offline/network failure messaging.
+- Token expiry and refresh handling.
+
+11.9 Mobile verification. [P0]
+- Test auth route switching.
+- Test booking creation from customer app.
+- Test owner sees new booking.
+- Test worker sees assigned booking.
+- Test logout and token refresh.
+
+============================================================
+PHASE 12 - BACKEND HARDENING
+============================================================
+
+12.1 Authorization audit. [P0]
+- Every write route checks user role.
+- Owner can only edit own salon.
+- Worker can only access assigned salon/booking.
+- Customer can only access own booking/chat/profile.
+- Admin can access platform-wide routes.
+
+12.2 Database indexes. [P0]
+- Unique phone index.
+- Booking date/salon/service indexes.
+- Review booking unique index.
+- Geo indexes.
+- Notification user/read indexes.
+
+12.3 Race condition protection. [P0]
+- Booking capacity check must be atomic.
+- Prevent duplicate points.
+- Prevent duplicate review.
+- Prevent duplicate reminder.
+
+12.4 Logging and audit trails. [P1]
+- Log admin actions.
+- Log booking status changes.
+- Log suspension/deletion/dispute actions.
+- Keep logs searchable enough for support.
+
+12.5 Security. [P0]
+- Rate-limit auth and OTP endpoints.
+- Hash passwords.
+- Do not return password/accessToken fields from user APIs.
+- Validate file uploads.
+- Restrict upload types and sizes.
+- Check CORS allowed origins.
+
+12.6 Error handling. [P0]
+- Convert thrown errors to consistent JSON.
+- Avoid leaking stack traces in production.
+- Add clear error codes for mobile handling.
+
+============================================================
+PHASE 13 - QA, RELEASE, AND DEPLOYMENT
+============================================================
+
+13.1 Seed data. [P0]
+- Seed admin.
+- Seed categories.
+- Seed demo salon.
+- Seed demo workers.
+- Seed demo services.
+- Seed sample bookings for testing.
+
+13.2 Backend tests. [P0]
+- Auth registration/login/refresh/logout tests.
+- Salon CRUD and approval tests.
+- Service CRUD tests.
+- Slot generation tests.
+- Booking create/cancel/complete tests.
+- Review and points tests.
+
+13.3 Mobile manual QA. [P0]
+- Fresh install.
+- Login/signup.
+- Customer creates booking.
+- Owner receives booking.
+- Worker completes booking.
+- Customer leaves review.
+- Notification list updates.
+
+13.4 Build checks. [P0]
+- Run backend TypeScript build.
+- Run mobile TypeScript/lint if configured.
+- Run mobile Jest tests.
+- Build Android debug/release.
+- Build iOS only if macOS environment is available.
+
+13.5 Deployment. [P0]
+- Configure production env.
+- Configure MongoDB production indexes.
+- Configure storage provider.
+- Configure email/push provider.
+- Deploy backend.
+- Point app API base URL to production.
+- Submit mobile builds if store release is needed.
+
+13.6 Release checklist. [P0]
+- No real secrets committed.
+- No test/demo data in production DB.
+- Admin account secured.
+- Error logs monitored.
+- Booking capacity tested under concurrent requests.
+- Terms/privacy pages available.
+
+============================================================
+RECOMMENDED BUILD ORDER
+============================================================
+
+Sprint 1 - Foundation and auth
+1. Clean naming and roles.
+2. Update auth model and permissions.
+3. Finish customer/owner/worker login and signup.
+4. Add OTP and refresh token flow.
+5. Wire mobile auth and role navigation.
+
+Sprint 2 - Salon, workers, services
+1. Update salon schema and profile APIs.
+2. Add operating hours.
+3. Add worker management.
+4. Update service schema and service CRUD.
+5. Wire owner mobile screens.
+
+Sprint 3 - Booking engine
+1. Update booking schema/statuses.
+2. Build slot generation.
+3. Enforce capacity and double-booking rules.
+4. Add customer booking flow.
+5. Add owner/worker booking management.
+
+Sprint 4 - Notifications, reviews, points
+1. Add event notifications.
+2. Add reminder scheduler.
+3. Add completed-booking reviews.
+4. Add points ledger.
+5. Wire mobile notification/review/points screens.
+
+Sprint 5 - Chat, disputes, admin
+1. Lock chat to booking lifecycle.
+2. Add dispute model and admin actions.
+3. Add salon approval and admin booking tools.
+4. Add reports/export/analytics basics.
+
+Sprint 6 - QA and release
+1. Add seed data.
+2. Add backend tests.
+3. Complete mobile manual QA.
+4. Fix edge cases.
+5. Build and deploy.
+
+============================================================
+EDGE CASE CHECKLIST
+============================================================
+
+- Phone number is unique across all roles.
+- Suspended account cannot login or book.
+- Deleted account data is anonymized, not hard deleted.
+- Salon global booking cap cannot be exceeded.
+- Worker cannot be booked outside working hours.
+- Service duration blocks the full time range.
+- Slots display in customer local timezone and store in UTC.
+- Closed days and worker-off days create no slots.
+- Customer has only one active booking per salon.
+- Same customer/service/slot duplicate booking is blocked.
+- Late cancellation requires admin approval.
+- Cancelled slot is released immediately.
+- Same-day repeated cancellations are flagged.
+- No-show can only be marked after slot end/grace period.
+- Last-minute booking reminder sends immediately.
+- One review per completed booking.
+- Review edit locks after 24 hours.
+- Cancelled/no-show bookings earn no points.
+- Dispute cannot be opened after 48 hours from booking end.
+
+============================================================
+DEFINITION OF DONE FOR V1
+============================================================
+
+- Customer can register, find a salon, book a service, receive notification,
+  cancel when allowed, chat about the booking, and review after completion.
+- Salon owner can register salon, manage salon profile, workers, services,
+  schedules, bookings, reviews, and customer communication.
+- Worker can login, see assigned bookings, receive reminders, chat, and mark
+  work progress/completion/no-show.
+- Admin can approve salons, manage users, manage bookings, resolve disputes,
+  moderate reviews, and configure core platform settings.
+- Booking capacity and time-slot rules are enforced by backend, not only mobile UI.
+- Backend builds successfully.
+- Mobile app runs successfully.
+- Critical flows are tested manually and with focused backend tests.

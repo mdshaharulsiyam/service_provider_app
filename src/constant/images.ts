@@ -59,18 +59,21 @@ import Call from "../assets/call.png"
 import At from "../assets/at.png"
 export const TabIcons = {
   Home,
-  "My Tasks": post, Chat,
+  Bookings: post,
+  Chat,
   Profile,
-  "Post Task": task,
-  "My Service": task,
+  Book: task,
+  Services: task,
+  Schedule: Calendar,
   Dashboard: Home,
 };
 export const svgIcons = {
   Home: HomeIcon,
-  "My Tasks": PostIcon,
+  Bookings: PostIcon,
   Profile: ProfileIcon,
-  "Post Task": TaskIcon,
-  "My Service": TaskIcon,
+  Book: TaskIcon,
+  Services: TaskIcon,
+  Schedule: HomeIcon,
   Dashboard: HomeIcon,
   Chat: ChatIcon,
   Camera: Camera,

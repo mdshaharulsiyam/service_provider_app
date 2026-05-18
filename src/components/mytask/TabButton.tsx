@@ -12,16 +12,16 @@ const TabButton = ({
 }) => {
   const { role } = useGlobalContext();
   const tabs =
-    role == "user"
+    role === "customer"
       ? [
-          "All Tasks",
-          "open for bids",
-          "in Progress",
-          "completed",
-          "cancelled",
-          "dispute",
+          "All bookings",
+          "Pending",
+          "Confirmed",
+          "Completed",
+          "Cancelled",
+          "Dispute",
         ]
-      : ["Ongoing Tasks", "Bids  Made", "Bids  Received", "dispute"];
+      : ["Today", "Confirmed", "Completed", "No-show", "Dispute"];
   const [activeTab, setActiveTab] = useState<string>(tab ? tab[0] : tabs[0]);
 
   return (

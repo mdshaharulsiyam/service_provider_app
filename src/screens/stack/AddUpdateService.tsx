@@ -7,7 +7,6 @@ import ButtonBG from '../../components/ui/buttons/ButtonBG';
 import ImageUploader from '../../components/ui/file/ImageUploader';
 import AddUpdateServiceFields from '../../formFields/AddUpdateServiceFields';
 import { handleSignIn } from '../../handler/signIn';
-import { useGlobalContext } from '../../providers/GlobalContextProvider';
 import SafeAreaProvider from '../../providers/SafeAreaProvider';
 import { FieldsType } from '../../types/Types';
 import Navigate from '../../utils/Navigate';
@@ -18,7 +17,6 @@ const AddUpdateService = () => {
   const { height } = ScreenSize();
   const { fields, setFields } = AddUpdateServiceFields();
   const { top, bottom } = useSafeAreaInsets();
-  const { setRole } = useGlobalContext();
   const navigate = Navigate();
   return (
     <SafeAreaProvider
@@ -39,8 +37,6 @@ const AddUpdateService = () => {
         text="Save Service"
         handler={() => {
           handleSignIn(fields, setFields);
-          const email = fields[0]?.value + "";
-          setRole(email?.includes("user") ? "user" : "service");
           navigate("TabLayout");
         }}
       />

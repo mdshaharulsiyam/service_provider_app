@@ -1,4 +1,27 @@
 {
-  "name": "TaskAlley",
-  "displayName": "TaskAlley"
+  "expo": {
+    "name": "SalonPro",
+    "slug": "salon-pro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "salonpro",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.salonpro.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.salonpro.app",
+      "supportsTablet": true
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
 }

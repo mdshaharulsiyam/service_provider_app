@@ -8,6 +8,7 @@ const Drawer = createDrawerNavigator();
 const DrawerLayout = () => {
   return (
     <Drawer.Navigator
+      id={undefined}
       screenOptions={{ headerShown: false, swipeEnabled: false }}
       initialRouteName="StackLayout"
       drawerContent={(props) => <CustomDrawerContent {...props} />}

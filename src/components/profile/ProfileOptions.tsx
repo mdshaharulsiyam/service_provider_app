@@ -22,7 +22,7 @@ const ProfileOptions = () => {
       image: profileIcons.Refer,
       navigate: "ReferDiscounts",
     },
-    ...(role == "service" ? [{
+    ...(role === "owner" || role === "worker" ? [{
       name: "Earnings",
       image: profileIcons.Earning,
       navigate: "Earnings",

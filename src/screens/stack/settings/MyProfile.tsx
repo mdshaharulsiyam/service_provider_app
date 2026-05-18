@@ -12,7 +12,7 @@ import profileUpdateFields from "../../../formFields/profileUpdateFields";
 import SafeAreaProvider from "../../../providers/SafeAreaProvider";
 import { FieldsType } from "../../../types/Types";
 import { RenderField } from "../../../utils/RenderField";
-import { pick } from "@react-native-documents/picker";
+import * as ImagePicker from "expo-image-picker";
 
 const MyProfile = () => {
   const { fields, setFields } = profileUpdateFields();
@@ -30,7 +30,7 @@ const MyProfile = () => {
         }}
       >
         <Image
-          source={{ uri: fiels?.[0]?.uri ||  "https://placehold.co/400x400.png" }}
+          source={{ uri: fiels?.[0]?.uri || "https://placehold.co/400x400.png" }}
           style={{
             height: 100,
             width: 100,
@@ -38,23 +38,25 @@ const MyProfile = () => {
           }}
         />
         <TouchableOpacity
-           onPress={async () => {
-                try {
-                  const pickResult = (await pick({})) as any;
-                  const file = {
-                    uri: pickResult?.[0]?.uri,
-                    name: pickResult?.[0]?.name,
-                    type: pickResult?.[0]?.type,
-                  };
-                  if (setFiels) {
-                    setFiels((prev: any) => [file,...prev]);
-                  }
-                  // const [pickResult] = await pick({mode:'import'}) // equivalent
-                  // do something with the picked file
-                } catch (err: unknown) {
-                  // see error handling
-                }
-              }}
+          onPress={async () => {
+            try {
+              const pickResult = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ["images"],
+                selectionLimit: 1,
+              });
+              const asset = pickResult.canceled ? null : pickResult.assets[0];
+              if (asset?.uri) {
+                const file = {
+                  uri: asset.uri,
+                  name: asset.fileName ?? asset.uri.split("/").pop() ?? "profile.jpg",
+                  type: asset.mimeType ?? "image/jpeg",
+                };
+                setFiels((prev: any) => [file, ...prev]);
+              }
+            } catch (err: unknown) {
+              // ignore
+            }
+          }}
           style={{
             position: "absolute",
             right: 3,
