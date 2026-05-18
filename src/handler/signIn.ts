@@ -7,5 +7,5 @@ export const handleSignIn = (
   setFields: React.Dispatch<React.SetStateAction<FieldsType[]>>
 ) => {
   const isValid = validateFields(fields, setFields);
-  console.log(isValid);
+  return isValid;
 };

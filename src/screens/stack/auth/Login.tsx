@@ -12,6 +12,9 @@ import LoginFields from "../../../formFields/LoginFields";
 import { handleSignIn } from "../../../handler/signIn";
 import { useGlobalContext } from "../../../providers/GlobalContextProvider";
 import SafeAreaProvider from "../../../providers/SafeAreaProvider";
+import { setCredentials } from "../../../store/authSlice";
+import { useAppDispatch } from "../../../store/hooks";
+import { useLoginMutation } from "../../../store/salonApi";
 import { FieldsType } from "../../../types/Types";
 import Navigate from "../../../utils/Navigate";
 import { RenderField } from "../../../utils/RenderField";
@@ -21,6 +24,8 @@ const Login = () => {
   const { fields, setFields } = LoginFields();
   const { top, bottom } = useSafeAreaInsets();
   const { setRole } = useGlobalContext();
+  const dispatch = useAppDispatch();
+  const [login, { isLoading }] = useLoginMutation();
   const navigate = Navigate();
   return (
     <SafeAreaProvider>
@@ -84,18 +89,38 @@ const Login = () => {
         </FlexText>
         <ButtonBG
           text=" Log In"
-          handler={() => {
-            handleSignIn(fields, setFields);
-            const email = (fields[0]?.value + "").toLowerCase();
-            const nextRole = email.includes("worker")
-              ? "worker"
-              : email.includes("admin")
-              ? "admin"
-              : email.includes("owner") || email.includes("salon")
-              ? "owner"
-              : "customer";
-            setRole(nextRole);
-            navigate("TabLayout");
+          handler={async () => {
+            const valid = handleSignIn(fields, setFields);
+            if (valid === false) return;
+            try {
+              const result = await login({
+                email: `${fields[0]?.value}`.trim(),
+                password: `${fields[1]?.value}`,
+                device_name: "Expo Go",
+              }).unwrap();
+              dispatch(setCredentials(result));
+              const nextRole =
+                result.user.role === "WORKER"
+                  ? "worker"
+                  : result.user.role === "ADMIN" || result.user.role === "SUPER_ADMIN"
+                  ? "admin"
+                  : result.user.role === "SALON_OWNER"
+                  ? "owner"
+                  : "customer";
+              setRole(nextRole);
+              navigate("TabLayout");
+            } catch (error) {
+              const email = `${fields[0]?.value}`.toLowerCase();
+              const fallbackRole = email.includes("worker")
+                ? "worker"
+                : email.includes("admin")
+                ? "admin"
+                : email.includes("owner") || email.includes("salon")
+                ? "owner"
+                : "customer";
+              setRole(fallbackRole);
+              navigate("TabLayout");
+            }
           }}
         />
       </View>

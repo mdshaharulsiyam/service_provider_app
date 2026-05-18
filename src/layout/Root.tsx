@@ -5,8 +5,10 @@ import React from "react";
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
+import { Provider } from "react-redux";
 import Toast from "react-native-toast-message";
 import GlobalContextProvider from "../providers/GlobalContextProvider";
+import { store } from "../store/store";
 import { salonTheme } from "../theme/salonTheme";
 import DrawerLayout from "./DrawerLayout";
 
@@ -29,16 +31,18 @@ const Root = () => {
     <GestureHandlerRootView style={styles.root}>
       <PortalProvider>
         <KeyboardProvider>
-          <NavigationContainer theme={navigationTheme}>
-            <GlobalContextProvider>
-              <StatusBar
-                style="dark"
-                backgroundColor={salonTheme.colors.background}
-              />
-              <DrawerLayout />
-              <Toast />
-            </GlobalContextProvider>
-          </NavigationContainer>
+          <Provider store={store}>
+            <NavigationContainer theme={navigationTheme}>
+              <GlobalContextProvider>
+                <StatusBar
+                  style="dark"
+                  backgroundColor={salonTheme.colors.background}
+                />
+                <DrawerLayout />
+                <Toast />
+              </GlobalContextProvider>
+            </NavigationContainer>
+          </Provider>
         </KeyboardProvider>
       </PortalProvider>
     </GestureHandlerRootView>

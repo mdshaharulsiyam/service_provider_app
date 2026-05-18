@@ -2,18 +2,18 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
 import { StyleSheet } from "react-native";
 import Tabbar from "../components/tabbar/Tabbar";
-import { useGlobalContext } from "../providers/GlobalContextProvider";
 import Chat from "../screens/tabs/Chat";
 import Home from "../screens/tabs/Home";
 import PostService from "../screens/tabs/PostService";
 import PostTask from "../screens/tabs/PostTask";
 import Profile from "../screens/tabs/Profile";
 import Tasks from "../screens/tabs/Tasks";
+import { useAppSelector } from "../store/hooks";
 
 const Tab = createBottomTabNavigator();
 
 const TabLayout = () => {
-  const { role } = useGlobalContext();
+  const role = useAppSelector((state) => state.auth.role);
   const isOwner = role === "owner" || role === "admin";
   const isWorker = role === "worker";
   const tabs = isWorker

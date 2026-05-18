@@ -1,82 +1,63 @@
 import React, { useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { useGlobalContext } from "../../providers/GlobalContextProvider";
 import SafeAreaProviderNoScroll from "../../providers/SafeAreaProviderNoScroll";
+import { useAppSelector } from "../../store/hooks";
+import {
+  Booking,
+  useBookingsQuery,
+  useCancelBookingMutation,
+  useCreateReviewMutation,
+  useUpdateBookingStatusMutation,
+} from "../../store/salonApi";
 import { salonTheme } from "../../theme/salonTheme";
 
-const filterOptions = ["All", "Pending", "Confirmed", "Completed", "Cancelled"];
+const filters = ["All", "pending", "confirmed", "in_progress", "completed", "cancelled"];
 
-const bookings = [
-  {
-    id: "BK-1042",
-    salon: "Glam Studio Banani",
-    customer: "Ayesha Rahman",
-    service: "Hair color",
-    time: "Today, 10:00 AM",
-    worker: "Nusrat",
-    status: "Confirmed",
-  },
-  {
-    id: "BK-1043",
-    salon: "Urban Cuts",
-    customer: "Nadia Islam",
-    service: "Facial",
-    time: "Today, 11:30 AM",
-    worker: "Assign worker",
-    status: "Pending",
-  },
-  {
-    id: "BK-1044",
-    salon: "Polish Bar",
-    customer: "Mariam Khan",
-    service: "Nail care",
-    time: "Tomorrow, 2:00 PM",
-    worker: "Tania",
-    status: "Confirmed",
-  },
-];
+const latestStatus = (booking: Booking) =>
+  booking.status?.[booking.status.length - 1]?.status || "pending";
 
 const Tasks = () => {
-  const { role } = useGlobalContext();
-  const [activeFilter, setActiveFilter] = useState(filterOptions[0]);
-  const isCustomer = !role || role === "customer";
+  const role = useAppSelector((state) => state.auth.role);
+  const [filter, setFilter] = useState(filters[0]);
+  const { data: bookings = [], isFetching, refetch } = useBookingsQuery(
+    filter === "All" ? undefined : { status: filter },
+  );
+  const [updateStatus, { isLoading: updating }] = useUpdateBookingStatusMutation();
+  const [cancelBooking] = useCancelBookingMutation();
+  const [createReview] = useCreateReviewMutation();
+  const isCustomer = role === "customer";
+
+  const canProgress = role === "owner" || role === "worker" || role === "admin";
 
   return (
     <SafeAreaProviderNoScroll zeroPadding>
       <FlatList
         data={bookings}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
+        keyExtractor={(item) => item._id}
+        refreshing={isFetching}
+        onRefresh={refetch}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
           <>
             <Text style={styles.kicker}>
-              {isCustomer ? "Customer bookings" : "Salon booking queue"}
+              {isCustomer ? "Customer booking history" : "Salon booking management"}
             </Text>
             <Text style={styles.title}>Bookings</Text>
             <Text style={styles.subtitle}>
-              Track active appointments, cancellation windows, workers, and service status.
+              Status, cancellation windows, worker actions, reviews, and disputes are all driven by the API.
             </Text>
             <FlatList
               horizontal
-              data={filterOptions}
+              data={filters}
               keyExtractor={(item) => item}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filters}
               renderItem={({ item }) => (
                 <Pressable
-                  onPress={() => setActiveFilter(item)}
-                  style={[
-                    styles.filterButton,
-                    item === activeFilter && styles.filterButtonActive,
-                  ]}
+                  onPress={() => setFilter(item)}
+                  style={[styles.filter, filter === item && styles.filterActive]}
                 >
-                  <Text
-                    style={[
-                      styles.filterText,
-                      item === activeFilter && styles.filterTextActive,
-                    ]}
-                  >
+                  <Text style={[styles.filterText, filter === item && styles.filterTextActive]}>
                     {item}
                   </Text>
                 </Pressable>
@@ -84,23 +65,71 @@ const Tasks = () => {
             />
           </>
         }
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text style={styles.emptyTitle}>No bookings found</Text>
+            <Text style={styles.emptyText}>Create a booking from the Book tab or seed demo data from Home.</Text>
+          </View>
+        }
         renderItem={({ item }) => (
-          <View style={styles.bookingCard}>
-            <View style={styles.bookingTop}>
-              <View>
-                <Text style={styles.bookingId}>{item.id}</Text>
-                <Text style={styles.bookingTitle}>
-                  {isCustomer ? item.salon : item.customer}
+          <View style={styles.card}>
+            <View style={styles.cardTop}>
+              <View style={styles.cardTitleBlock}>
+                <Text style={styles.reference}>{item.booking_reference || item._id.slice(-8)}</Text>
+                <Text style={styles.cardTitle}>
+                  {isCustomer ? item.business?.name : item.user?.name || "Customer"}
+                </Text>
+                <Text style={styles.cardMeta}>
+                  {item.services?.[0]?.name || "Salon service"} - {new Date(item.start_at || item.startTime || "").toLocaleString()}
                 </Text>
               </View>
               <View style={styles.statusPill}>
-                <Text style={styles.statusText}>{item.status}</Text>
+                <Text style={styles.statusText}>{latestStatus(item)}</Text>
               </View>
             </View>
-            <View style={styles.detailGrid}>
-              <Detail label="Service" value={item.service} />
-              <Detail label="Time" value={item.time} />
-              <Detail label="Worker" value={item.worker} />
+
+            <View style={styles.actionRow}>
+              {canProgress && latestStatus(item) === "pending" ? (
+                <Action
+                  label="Confirm"
+                  disabled={updating}
+                  onPress={() => updateStatus({ id: item._id, status: "confirmed" })}
+                />
+              ) : null}
+              {canProgress && latestStatus(item) === "confirmed" ? (
+                <Action
+                  label="Start"
+                  disabled={updating}
+                  onPress={() => updateStatus({ id: item._id, status: "in_progress" })}
+                />
+              ) : null}
+              {canProgress && latestStatus(item) === "in_progress" ? (
+                <Action
+                  label="Complete"
+                  disabled={updating}
+                  onPress={() => updateStatus({ id: item._id, status: "completed" })}
+                />
+              ) : null}
+              {canProgress ? (
+                <Action
+                  label="No Show"
+                  muted
+                  onPress={() => updateStatus({ id: item._id, status: "no_show", reason: "Customer did not arrive" })}
+                />
+              ) : null}
+              {isCustomer && ["pending", "confirmed"].includes(latestStatus(item)) ? (
+                <Action
+                  label="Cancel"
+                  muted
+                  onPress={() => cancelBooking({ id: item._id, reason: "Customer requested cancellation" })}
+                />
+              ) : null}
+              {isCustomer && latestStatus(item) === "completed" ? (
+                <Action
+                  label="Review"
+                  onPress={() => createReview({ bookingId: item._id, rating: 5, description: "Great salon experience." })}
+                />
+              ) : null}
             </View>
           </View>
         )}
@@ -109,20 +138,32 @@ const Tasks = () => {
   );
 };
 
-const Detail = ({ label, value }: { label: string; value: string }) => (
-  <View style={styles.detailItem}>
-    <Text style={styles.detailLabel}>{label}</Text>
-    <Text style={styles.detailValue}>{value}</Text>
-  </View>
+const Action = ({
+  label,
+  onPress,
+  muted,
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  muted?: boolean;
+  disabled?: boolean;
+}) => (
+  <Pressable
+    onPress={onPress}
+    disabled={disabled}
+    style={[styles.action, muted && styles.actionMuted]}
+  >
+    <Text style={[styles.actionText, muted && styles.actionTextMuted]}>{label}</Text>
+  </Pressable>
 );
 
 export default Tasks;
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: salonTheme.spacing.lg,
-    paddingTop: salonTheme.spacing.lg,
-    paddingBottom: 120,
+    padding: salonTheme.spacing.lg,
+    paddingBottom: 130,
     backgroundColor: salonTheme.colors.background,
   },
   kicker: {
@@ -147,7 +188,7 @@ const styles = StyleSheet.create({
     gap: salonTheme.spacing.sm,
     paddingVertical: salonTheme.spacing.lg,
   },
-  filterButton: {
+  filter: {
     paddingHorizontal: salonTheme.spacing.md,
     paddingVertical: 9,
     borderRadius: 999,
@@ -155,44 +196,54 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: salonTheme.colors.border,
   },
-  filterButtonActive: {
+  filterActive: {
     backgroundColor: salonTheme.colors.primary,
     borderColor: salonTheme.colors.primary,
   },
   filterText: {
     color: salonTheme.colors.textMuted,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
+    textTransform: "capitalize",
   },
   filterTextActive: {
     color: salonTheme.colors.surface,
   },
-  bookingCard: {
+  card: {
     marginBottom: salonTheme.spacing.md,
     padding: salonTheme.spacing.lg,
-    borderRadius: salonTheme.radius.xl,
+    borderRadius: salonTheme.radius.lg,
     backgroundColor: salonTheme.colors.surface,
     borderWidth: 1,
     borderColor: salonTheme.colors.border,
   },
-  bookingTop: {
+  cardTop: {
     flexDirection: "row",
-    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: salonTheme.spacing.md,
   },
-  bookingId: {
+  cardTitleBlock: {
+    flex: 1,
+  },
+  reference: {
     color: salonTheme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "800",
   },
-  bookingTitle: {
+  cardTitle: {
     marginTop: 4,
     color: salonTheme.colors.text,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "900",
   },
+  cardMeta: {
+    marginTop: 4,
+    color: salonTheme.colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
   statusPill: {
+    alignSelf: "flex-start",
     paddingHorizontal: salonTheme.spacing.sm,
     paddingVertical: 6,
     borderRadius: 999,
@@ -200,31 +251,51 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: salonTheme.colors.info,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "900",
+    textTransform: "capitalize",
   },
-  detailGrid: {
+  actionRow: {
     marginTop: salonTheme.spacing.lg,
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: salonTheme.spacing.sm,
   },
-  detailItem: {
-    flexDirection: "row",
+  action: {
+    minHeight: 38,
+    paddingHorizontal: salonTheme.spacing.md,
+    borderRadius: salonTheme.radius.md,
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: salonTheme.spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: salonTheme.colors.border,
+    justifyContent: "center",
+    backgroundColor: salonTheme.colors.primary,
   },
-  detailLabel: {
-    color: salonTheme.colors.textMuted,
+  actionMuted: {
+    backgroundColor: salonTheme.colors.surfaceMuted,
+  },
+  actionText: {
+    color: salonTheme.colors.surface,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "900",
   },
-  detailValue: {
-    maxWidth: "58%",
+  actionTextMuted: {
     color: salonTheme.colors.text,
-    textAlign: "right",
+  },
+  empty: {
+    padding: salonTheme.spacing.lg,
+    borderRadius: salonTheme.radius.lg,
+    backgroundColor: salonTheme.colors.surface,
+    borderWidth: 1,
+    borderColor: salonTheme.colors.border,
+  },
+  emptyTitle: {
+    color: salonTheme.colors.text,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  emptyText: {
+    marginTop: 6,
+    color: salonTheme.colors.textMuted,
     fontSize: 13,
-    fontWeight: "800",
+    lineHeight: 19,
   },
 });

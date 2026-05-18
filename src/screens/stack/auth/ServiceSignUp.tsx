@@ -13,6 +13,9 @@ import ImageUploader from "../../../components/ui/file/ImageUploader";
 import ServiceSignUpFields from "../../../formFields/ServiceSignUpFields";
 import { handleServiceSignUp } from "../../../handler/serviceSignUp";
 import SafeAreaProvider from "../../../providers/SafeAreaProvider";
+import { setCredentials } from "../../../store/authSlice";
+import { useAppDispatch } from "../../../store/hooks";
+import { useOwnerSignupMutation } from "../../../store/salonApi";
 import { FieldsType } from "../../../types/Types";
 import Navigate, { Navigation } from "../../../utils/Navigate";
 import { RenderField } from "../../../utils/RenderField";
@@ -71,6 +74,8 @@ const ServiceSignUp = () => {
   const [fiels, setFiels] = useState<any>([]);
   const navigate = Navigate();
   const navigation = Navigation()
+  const dispatch = useAppDispatch();
+  const [ownerSignup] = useOwnerSignupMutation();
   const backHandler = () => {
     if (currentSlide == 0) {
       navigation.goBack()
@@ -183,9 +188,30 @@ const ServiceSignUp = () => {
               if (isValid && currentSlide < 4) {
                 setCurrentSlide((prev) => prev + 1);
               } else if (currentSlide == 4) {
-                navigate("Verify", {
-                  params: { phoneNumber: "", from: "signup" },
-                });
+                const payload = Object.fromEntries(fields.map((field) => [field.name, field.value]));
+                ownerSignup({
+                  name: payload.name,
+                  email: payload.email,
+                  phone: payload.phone,
+                  password: payload.password,
+                  confirm_password: payload.confirmPassword,
+                  salon_name: `${payload.name || "My"} Salon`,
+                  street_address: payload.address,
+                  upazilas: payload.city,
+                  districts: payload.city,
+                  divisions: payload.city,
+                  category: "Hair and Beauty",
+                })
+                  .unwrap()
+                  .then((result) => {
+                    dispatch(setCredentials(result));
+                    navigate("TabLayout");
+                  })
+                  .catch(() =>
+                    navigate("Verify", {
+                      params: { phoneNumber: "", from: "signup" },
+                    }),
+                  );
               }
             }}
           />
@@ -193,9 +219,7 @@ const ServiceSignUp = () => {
             <ButtonTransparentBG
               text="Skip & Continue Without Code"
               handler={() => {
-                navigate("Verify", {
-                  params: { phoneNumber: "", from: "signup" },
-                });
+                navigate("TabLayout");
               }}
             />
           )}

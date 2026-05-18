@@ -13,6 +13,9 @@ import ImageUploader from "../../../components/ui/file/ImageUploader";
 import CustomerSignUpFields from "../../../formFields/CustomerSignUpFields";
 import { handleCustomerSignUp } from "../../../handler/customerSignUp";
 import SafeAreaProvider from "../../../providers/SafeAreaProvider";
+import { setCredentials } from "../../../store/authSlice";
+import { useAppDispatch } from "../../../store/hooks";
+import { useCustomerSignupMutation } from "../../../store/salonApi";
 import { FieldsType } from "../../../types/Types";
 import Navigate, { Navigation } from "../../../utils/Navigate";
 import { RenderField } from "../../../utils/RenderField";
@@ -55,6 +58,8 @@ const CustomerSignUp = () => {
   const [fiels, setFiels] = useState<any>([]);
   const navigate = Navigate();
   const navigation = Navigation()
+  const dispatch = useAppDispatch();
+  const [customerSignup] = useCustomerSignupMutation();
   const backHandler = () => {
     if (currentSlide == 0) {
       navigation.goBack()
@@ -150,9 +155,24 @@ const CustomerSignUp = () => {
             if (isValid && currentSlide < 2) {
               setCurrentSlide((prev) => prev + 1);
             } else if (currentSlide == 2) {
-              navigate("Verify", {
-                params: { phoneNumber: "", from: "signup" },
-              });
+              const payload = Object.fromEntries(fields.map((field) => [field.name, field.value]));
+              customerSignup({
+                name: payload.name,
+                email: payload.email,
+                phone: payload.phone,
+                password: payload.password,
+                confirm_password: payload.confirmPassword,
+              })
+                .unwrap()
+                .then((result) => {
+                  dispatch(setCredentials(result));
+                  navigate("TabLayout");
+                })
+                .catch(() =>
+                  navigate("Verify", {
+                    params: { phoneNumber: "", from: "signup" },
+                  }),
+                );
             }
           }}
         />
@@ -160,9 +180,7 @@ const CustomerSignUp = () => {
           <ButtonTransparentBG
             text="Skip & Continue Without Code"
             handler={() => {
-              navigate("Verify", {
-                params: { phoneNumber: "", from: "signup" },
-              });
+              navigate("TabLayout");
             }}
           />
         )}
